@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <http:listener-config name="cust-httpListenerConfig">
+        <http:listener-connection host='${http.host}' port='${http.port}' />
+    </http:listener-config>
+    <apikit:config name="cust-config" api="cust.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <db:config name="Database_Config" doc:name="Database Config" doc:id="0b3e0314-92ee-4ef5-9f0b-81e8702cdafa" >
+		<db:my-sql-connection host="${db.host}" port="${db.port}" user="${db.user}" password="root123456" database="${db.database}" />
+	</db:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="7e8f8730-10a6-49e5-afaa-cfcbbf3f2699" file="dev.properties" />
+	<flow name="cust-main">
+        <http:listener config-ref="cust-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="cust-config" />
+    </flow>
+    <flow name="cust-console">
+        <http:listener config-ref="cust-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="cust-config" />
+    </flow>
+    <flow name="delete:\deletecust:application\json:cust-config">
+		<set-variable value="payload.custid" doc:name="Set Variable" doc:id="fa49c302-2cdd-4196-987e-7f9b4ecd3907" variableName="custid" />
+		<db:delete doc:name="Delete" doc:id="e325de6a-ac1d-4904-8824-8af0a004470d" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.remove.query}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	customerid : payload.custid
+}]]]></db:input-parameters>
+		</db:delete>
+		<ee:transform doc:name="payload" doc:id="d874a2f7-a9fb-4902-a95c-159e47612e68" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+{
+	"message" : "delete successful"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="deletelog" doc:id="21c84da5-e32d-4843-941f-f73715b9f6a8" message='#["delete customer details finished"]'/>
+    </flow>
+    <flow name="patch:\updatecusttel:application\json:cust-config">
+        <db:update doc:name="Update" doc:id="368c335b-ede1-4077-9a54-234e5599bdba" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.update.query}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{ "mobile" : payload.mobile,
+	"custid" : payload.id
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "telephone number updated successfully",
+ 
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<logger level="INFO" doc:name="update" doc:id="6ad0eebb-2ffe-4256-a279-b16be2b7a902" message='#["update finished"]'/>
+    </flow>
+    <flow name="get:\getallcustomer:cust-config">
+		<db:select doc:name="Select" doc:id="a031546c-a096-45aa-96c8-0d0f3313dfa7" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.selectall.query}]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="fb710446-5d4e-49e7-97ea-e6c0a628d8fa" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+    </flow>
+    <flow name="get:\getcustomerid:cust-config">
+        <set-variable value="#[attributes.queryParams.custid]" doc:name="Set Variable" doc:id="5d5cf507-4c89-4609-b825-18bc8a7cf2d9" variableName="custid" />
+		<db:select doc:name="Select" doc:id="f9d8b81b-9ccd-4497-b411-3bdbacba3755" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.selectid.query}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+"customerid" : vars.custid 
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="4d79c8c9-8649-4b54-91cc-98c0f383f998" >
+			<when expression="#[sizeOf(payload)&gt;0]">
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="cf57cec5-581a-4413-a6a6-5681bf114478" doc:name="reply customerid">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="reply custid not found" doc:id="9dae595e-3750-4842-ad4b-b8fd7eb661ab" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"message" : "customer id not found"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="logfinished" doc:id="c2d7410e-b26f-4ce8-adef-7ba0d33e0829" message='#["log finished"]'/>
+    </flow>
+    <flow name="post:\createcustomer:application\json:cust-config">
+		<foreach doc:name="For Each" doc:id="14394e52-568a-4f9b-9003-2ffee08af207" >
+			<logger level="INFO" doc:name="Logger" doc:id="ca59d098-71b3-48ef-ad95-7078220951a5" message='#["for insertion start"]'/>
+			<db:insert doc:name="Insert" doc:id="b8b44132-d292-4259-88ba-5eba0d4dc997" config-ref="Database_Config">
+			<db:sql><![CDATA[${db.create.query}]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+    "phone": payload.phone,
+    "name": payload.name,
+    "id": payload.id,
+    "email": payload.email
+  }]]]></db:input-parameters>
+		</db:insert>
+			<logger level="INFO" doc:name="Logger" doc:id="78ffc94a-4317-47a7-a4ba-0ff0ce27f464" message='#["inserted successfully"]'/>
+		</foreach>
+    </flow>
+</mule>

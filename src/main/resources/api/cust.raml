@@ -1,0 +1,107 @@
+#%RAML 1.0
+title: cust
+version: v1
+protocols:
+  - http
+mediaType: 
+- application/json
+
+/getallcustomer:
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              [
+              {
+                "id" : 1,
+                "name" : "dev",
+                "email" : "123@gmail.com",
+                "phno" : 123456748
+              },
+              {
+                "id" : 1,
+                "name" : "dev",
+                "email" : "123@gmail.com",
+                "phno" : 123456748
+              },
+              {
+                "id" : 1,
+                "name" : "dev",
+                "email" : "123@gmail.com",
+                "phno" : 123456748
+              }  ]
+
+/getcustomerid:
+  get:
+    queryParameters:
+      custid:
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "id" : 1,
+                "name" : "dev",
+                "email" : "123@gmail.com",
+                "phno" : 123456748
+              }
+/createcustomer:
+  post:
+    body:
+      application/json:
+        example:
+           {
+                "id" : 1,
+                "name" : "dev",
+                "email" : "123@gmail.com",
+                "phno" : 123456748
+              }
+    responses:
+      201:
+        body:
+          application/json:
+            example:
+              {
+                "message" : "customer data inserted successfully"
+              }
+/updatecusttel:
+  patch:
+    body:
+      application/json:
+        example:
+          {
+            "custid" : "1",
+            "new phno" : 98745689
+          }
+    responses:
+      201:
+        body:
+          application/json:
+            example:
+              {
+                "message" : "telephone number updated successfully"
+              }
+/deletecust:
+  delete:
+    body:
+      application/json:
+        example:
+          {
+            "id" : "1",
+                  }
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "message" : "customer data deleted successfully"
+                
+              }
+        
+        
+              
