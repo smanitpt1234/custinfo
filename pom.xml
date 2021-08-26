@@ -37,7 +37,7 @@
       <username>smanitpt</username>
       <password>Admin@321</password>
       <applicationName>custinfo</applicationName>
-      <environment>sandbox</environment>
+       <environment>Sandbox</environment>
        <workers>1</workers>
       <workerType>micro</workerType>
       <objectStoreV2>true</objectStoreV2>
